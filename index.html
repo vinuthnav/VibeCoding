@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>CyberGuard: Security Awareness Game</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="app">
+    <!-- Top Navigation -->
+    <header class="nav">
+      <div class="brand">
+        <div class="brand-icon" aria-hidden="true">🛡️</div>
+        <div class="brand-text">CyberGuard</div>
+      </div>
+
+      <div class="nav-right">
+        <div class="greeting">
+          <span id="greetingText">Welcome, Agent</span>
+        </div>
+        <div class="score-pill" aria-live="polite">
+          <span class="label">Points</span>
+          <span class="value" id="totalPoints">0</span>
+        </div>
+        <button class="icon-btn" id="soundToggle" aria-pressed="false" title="Toggle sound" onclick="toggleSound()">🔊</button>
+        <button class="icon-btn" id="animToggle" aria-pressed="true" title="Toggle animations" onclick="toggleAnimations()">✨</button>
+        <button class="icon-btn" title="Settings" onclick="openSettings()">⚙️</button>
+      </div>
+    </header>
+
+    <!-- Welcome / Onboarding -->
+    <section class="panel" id="welcomeScreen">
+      <div class="panel-body center">
+        <div class="hero">
+          <div class="hero-badge">Security Awareness</div>
+          <h1 class="hero-title">Become a better defender</h1>
+          <p class="hero-sub">Learn to spot threats through realistic scenarios and level up your cyber hygiene.</p>
+        </div>
+
+        <form class="onboard" onsubmit="return handleOnboard(event)">
+          <label for="playerName" class="input-label">Your name</label>
+          <input id="playerName" class="text-input" type="text" placeholder="e.g., Alex" autocomplete="name" maxlength="24" />
+          <button class="primary-btn" type="submit">Start Game</button>
+        </form>
+
+        <div class="facts">
+          <div class="fact"><span class="fact-num" id="statAttacks">4.8M</span><span class="fact-label">Daily attacks</span></div>
+          <div class="fact"><span class="fact-num" id="statDamage">$6T</span><span class="fact-label">Annual damage</span></div>
+          <div class="fact"><span class="fact-num" id="statHuman">95%</span><span class="fact-label">Human factor</span></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Level Selection -->
+    <section class="panel" id="levelSelection" style="display:none;">
+      <div class="panel-head">
+        <h2 class="panel-title">Choose a level</h2>
+        <p class="panel-sub">Progress saves automatically</p>
+      </div>
+      <div class="levels">
+        <button class="level-card" data-level="1" onclick="startLevel(1)">
+          <div class="level-meta">
+            <div class="level-name">Level 1</div>
+            <div class="level-desc">Fundamentals</div>
+          </div>
+          <div class="level-stats-min">
+            <span>5 questions</span>
+            <span>10 pts each</span>
+          </div>
+        </button>
+        <button class="level-card" data-level="2" onclick="startLevel(2)">
+          <div class="level-meta">
+            <div class="level-name">Level 2</div>
+            <div class="level-desc">Situational</div>
+          </div>
+          <div class="level-stats-min">
+            <span>7 questions</span>
+            <span>15 pts each</span>
+          </div>
+          <div class="lock" aria-hidden="true" id="lock2">🔒</div>
+        </button>
+        <button class="level-card" data-level="3" onclick="startLevel(3)">
+          <div class="level-meta">
+            <div class="level-name">Level 3</div>
+            <div class="level-desc">Advanced</div>
+          </div>
+          <div class="level-stats-min">
+            <span>10 questions</span>
+            <span>20 pts each</span>
+          </div>
+          <div class="lock" aria-hidden="true" id="lock3">🔒</div>
+        </button>
+      </div>
+    </section>
+
+    <!-- Quiz -->
+    <section class="panel" id="quizContainer" style="display:none;">
+      <div class="quiz-head">
+        <div class="lh">
+          <div class="kpi">
+            <span id="currentLevel" class="kpi-label">Level 1</span>
+          </div>
+          <div class="progress">
+            <div class="progress-bar" aria-hidden="true">
+              <div class="progress-fill" id="progressFill"></div>
+            </div>
+            <div class="counter"><span id="currentQuestion">1</span>/<span id="totalQuestions">5</span></div>
+          </div>
+        </div>
+        <button class="ghost-btn" onclick="exitToLevels()">Exit</button>
+      </div>
+
+      <div class="question">
+        <div class="meta" id="threatIndicator">
+          <span class="chip" id="threatType">Phishing</span>
+        </div>
+        <h3 id="questionText" class="q-text">Loading question...</h3>
+      </div>
+
+      <div class="options" id="optionsContainer"></div>
+
+      <div class="hint" id="hintSection" style="display:none;">
+        <div class="hint-icon">💡</div>
+        <p id="hintText"></p>
+      </div>
+
+      <div class="actions">
+        <button class="ghost-btn" id="hintBtn" onclick="showHint()">Hint</button>
+        <button class="primary-btn" id="submitBtn" onclick="submitAnswer()" disabled>Submit</button>
+      </div>
+    </section>
+
+    <!-- Results -->
+    <section class="panel" id="resultsScreen" style="display:none;">
+      <div class="panel-body center">
+        <div class="result-icon" id="resultAnimation">🏆</div>
+        <h2 class="panel-title" id="resultTitle">Level complete</h2>
+        <div class="summary">
+          <div class="summary-item"><span>Level points</span><strong id="levelPoints">0</strong></div>
+          <div class="summary-item"><span>Total points</span><strong id="finalPoints">0</strong></div>
+          <div class="summary-item"><span>Accuracy</span><strong id="accuracy">0%</strong></div>
+        </div>
+        <div class="actions center">
+          <button class="primary-btn" id="nextLevelBtn" onclick="nextLevel()">Next level</button>
+          <button class="ghost-btn" onclick="restartGame()">Play again</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Settings Modal -->
+    <div class="modal" id="settingsModal" aria-hidden="true">
+      <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
+        <div class="modal-head">
+          <h3 id="settingsTitle">Settings</h3>
+          <button class="icon-btn" onclick="closeSettings()" aria-label="Close">✕</button>
+        </div>
+        <div class="modal-body">
+          <label class="switch">
+            <input type="checkbox" id="soundCheckbox" onchange="toggleSound(true)" />
+            <span>Sound effects</span>
+          </label>
+          <label class="switch">
+            <input type="checkbox" id="animCheckbox" onchange="toggleAnimations(true)" checked />
+            <span>Animations</span>
+          </label>
+        </div>
+        <div class="modal-foot">
+          <button class="ghost-btn" onclick="closeSettings()">Close</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Feedback Toasts -->
+    <div class="toast-container" id="toastContainer" aria-live="polite" aria-atomic="true"></div>
+
+    <!-- Answer Feedback Modal (unchanged, minimal) -->
+    <div class="feedback-modal" id="feedbackModal">
+      <div class="modal-content">
+        <div class="feedback-icon" id="feedbackIcon">✅</div>
+        <h3 id="feedbackTitle">Correct!</h3>
+        <p id="feedbackText">Great job! You've identified the threat correctly.</p>
+        <div class="points-earned" id="pointsEarned">+10 Points</div>
+      </div>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html> 
